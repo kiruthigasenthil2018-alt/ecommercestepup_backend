@@ -1,0 +1,5 @@
+{% extends "admin/change_list.html" %}
+{% block object-tools-items %}
+<li><a href="{% url 'admin:store_order_livemap' %}" class="addlink">🗺 Live map of all orders</a></li>
+{{ block.super }}
+{% endblock %}

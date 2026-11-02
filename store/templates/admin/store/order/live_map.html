@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<div id="allmap" style="height:560px;border-radius:8px"></div>
+<p class="help">🏬 store (Chennai) · 🚚 parcel on the way · 🏠 order placed / delivered. Click a marker to open the order. Refreshes every 30 seconds.</p>
+{{ orders|json_script:"orders-data" }}{{ store|json_script:"store-data" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% include "admin/store/order/_tiles.html" %}
+<script>
+var O=JSON.parse(document.getElementById('orders-data').textContent),S=JSON.parse(document.getElementById('store-data').textContent);
+var m=L.map('allmap');stepupTiles(m);
+function ic(e){return L.divIcon({html:'<div style="font-size:24px">'+e+'</div>',className:'',iconSize:[26,26],iconAnchor:[13,13]});}
+var pts=[[S.lat,S.lng]];L.marker(pts[0],{icon:ic('🏬')}).addTo(m).bindPopup(S.name);
+O.forEach(function(o){var p=o.pos;if(!p)return;pts.push([p.lat,p.lng]);
+ L.marker([p.lat,p.lng],{icon:ic(o.status==='shipped'||o.status==='out_for_delivery'?'🚚':'🏠')}).addTo(m).bindPopup('<b>#'+o.number+'</b><br>'+o.status+' → '+o.city+'<br><a href="'+o.url+'">Open order</a>');
+ if(o.dest[0]!=null)L.polyline([[S.lat,S.lng],o.dest],{color:'#2F4F4F',weight:2,dashArray:'6 8'}).addTo(m);});
+m.fitBounds(pts,{padding:[40,40],maxZoom:13});setTimeout(function(){location.reload();},30000);
+</script>
+{% endblock %}

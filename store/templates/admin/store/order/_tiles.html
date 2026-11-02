@@ -1,0 +1,10 @@
+<script>
+function stepupTiles(m){
+  var attr='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  var proxy=L.tileLayer('/tiles/{z}/{x}/{y}.png',{maxZoom:19,attribution:attr});
+  var direct=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,referrerPolicy:'strict-origin-when-cross-origin',attribution:attr});
+  var bad=0,swapped=false;
+  proxy.on('tileerror',function(){ if(++bad>=3 && !swapped){ swapped=true; m.removeLayer(proxy); direct.addTo(m);} });
+  proxy.addTo(m);
+}
+</script>

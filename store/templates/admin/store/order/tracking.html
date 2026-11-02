@@ -1,0 +1,33 @@
+{% extends "admin/base_site.html" %}
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="{% url 'admin:index' %}">Home</a> › <a href="{% url 'admin:store_order_changelist' %}">Orders</a> › <a href="{% url 'admin:store_order_change' o.pk %}">{{ o.number }}</a> › Tracking</div>{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<p><b>{{ o.number }}</b> · {{ o.first_name }} {{ o.last_name }} · {{ o.address }}, {{ o.city }} {{ o.pincode }} · Status: <b id="stlabel">{{ o.get_status_display }}</b> <span style="color:#6c6">● LIVE · refreshes every 10s</span>{% if o.expected_delivery %} · Expected: {{ o.expected_delivery }}{% endif %}</p>
+<p>{% for s in steps %}<span style="padding:4px 10px;border-radius:12px;margin-right:6px;background:{% if s.done %}#2F4F4F;color:#fff{% else %}#444;color:#bbb{% endif %}">{{ s.label }}</span>{% endfor %}</p>
+<div id="tmap" style="height:480px;border-radius:8px"></div>
+<form method="post" style="margin-top:12px">{% csrf_token %}
+  <input type="hidden" name="lat" id="lat"><input type="hidden" name="lng" id="lng">
+  <button class="button default" id="setbtn" disabled>Set parcel here</button>
+  <button class="button" name="dest" value="1" id="destbtn" disabled>Set as DELIVERY location</button>
+  <button class="button" name="reset" value="1">Reset to automatic position</button>
+  <a class="button" href="{% url 'admin:store_order_change' o.pk %}">Edit order / change status</a>
+  <span class="help">Click on the map to place the 🚚 parcel. Customers see the new position on their tracking page within 15 seconds.</span>
+</form>
+{{ data|json_script:"tdata" }}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% include "admin/store/order/_tiles.html" %}
+<script>
+var d=JSON.parse(document.getElementById('tdata').textContent);var m=L.map('tmap');
+stepupTiles(m);
+function ic(e){return L.divIcon({html:'<div style="font-size:26px">'+e+'</div>',className:'',iconSize:[28,28],iconAnchor:[14,14]});}
+var pts=[[d.store.lat,d.store.lng]];L.marker(pts[0],{icon:ic('🏬')}).addTo(m).bindPopup(d.store.name+'<br>'+d.store.address);
+if(d.dest[0]!=null){pts.push(d.dest);L.marker(d.dest,{icon:ic('🏠')}).addTo(m).bindPopup('Delivery address');L.polyline([pts[0],d.dest],{color:'#6fb3b3',weight:3,dashArray:'8 10'}).addTo(m);}
+var cur=null;function setCur(ll){if(cur)m.removeLayer(cur);cur=L.marker(ll,{icon:ic('🚚')}).addTo(m);}
+if(d.pos){setCur([d.pos.lat,d.pos.lng]);pts.push([d.pos.lat,d.pos.lng]);L.polyline([pts[0],[d.pos.lat,d.pos.lng]],{color:'#2F4F4F',weight:4}).addTo(m);}
+m.fitBounds(pts,{padding:[50,50],maxZoom:14});
+m.on('click',function(e){setCur(e.latlng);document.getElementById('lat').value=e.latlng.lat;document.getElementById('lng').value=e.latlng.lng;document.getElementById('setbtn').disabled=false;document.getElementById('destbtn').disabled=false;});
+setInterval(function(){ if(document.getElementById('lat').value) return;  // don't override a position you just clicked
+ fetch(location.pathname+'?json=1',{credentials:'same-origin'}).then(function(r){return r.json();}).then(function(j){
+  if(j.pos){setCur([j.pos.lat,j.pos.lng]);} document.getElementById('stlabel').textContent=j.label; }).catch(function(){}); },10000);
+</script>
+{% endblock %}

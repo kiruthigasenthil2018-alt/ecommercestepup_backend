@@ -1,0 +1,12 @@
+{% extends "admin/index.html" %}
+{% block content %}
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px">
+  <a class="button" href="{{ site_url }}/" target="_blank">🏠 Open Home page</a>
+  <a class="button" href="{{ site_url }}/contact" target="_blank">☎ Open Contact page</a>
+  <a class="button" href="{% url 'admin:store_homebanner_changelist' %}">Edit Home banners</a>
+  <a class="button" href="{% url 'admin:store_homepage_changelist' %}">Edit Home text</a>
+  <a class="button" href="{% url 'admin:store_contactpage_changelist' %}">Edit Contact details</a>
+  <a class="button" href="{% url 'admin:store_order_livemap' %}">🗺 Live map of all orders</a>
+</div>
+{{ block.super }}
+{% endblock %}
